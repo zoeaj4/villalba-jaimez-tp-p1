@@ -1,0 +1,8 @@
+# Carpetas de compilación y binarios de Java
+bin/
+*.class
+
+# Archivos de configuración de Eclipse
+.settings/
+.classpath
+.project
