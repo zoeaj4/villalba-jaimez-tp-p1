@@ -12,8 +12,9 @@ public class Juego extends InterfaceJuego {
     private Elizabeth princesa;
     private Mapa      mapa;
     private Proyectil disparo;
+    private ProyectilArea disparoArea;
     private int       vidas;
- 
+    
     private Enemigo[] enemigos;
     private Pocion[]  pociones;
  
@@ -33,6 +34,7 @@ public class Juego extends InterfaceJuego {
  
     private Image imagenPerdiste;
     private Image imagenGanaste;
+    private Image imagenVida;
  
     public Juego() {
     	
@@ -47,6 +49,7 @@ public class Juego extends InterfaceJuego {
         
         this.imagenPerdiste = Herramientas.cargarImagen("perdiste.png");
         this.imagenGanaste  = Herramientas.cargarImagen("ganaste.png");
+        this.imagenVida = Herramientas.cargarImagen("vida.png");
         this.entorno.iniciar();
         
     }
@@ -152,15 +155,29 @@ public class Juego extends InterfaceJuego {
         if (!apoyada) princesa.setEnElAire(true);
  
         // Solo puede existir un proyectil a la vez (disparo == null significa que no hay ninguno) Al hacer clic izquierdo se crea uno apuntando al cursor. moverse() lo avanza cada tick, al salir de pantalla se  destruye poniéndolo en null
-        if (entorno.sePresionoBoton(entorno.BOTON_IZQUIERDO) && disparo == null) {
+        if (entorno.sePresionoBoton(entorno.BOTON_IZQUIERDO) && disparo == null && disparoArea == null) {
             // La posición de origen se convierte a coordenadas de pantalla restando el desplazamiento, porque el proyectil viaja en pantalla.
             disparo = new Proyectil(princesa.getX() - desplazamientoMapaX, princesa.getY(),
                                     entorno.mouseX(), entorno.mouseY());
         }
+        // disparo secundario con click derecho
+        if (entorno.sePresionoBoton(entorno.BOTON_DERECHO) && disparo == null && disparoArea == null) {
+                disparoArea = new ProyectilArea(princesa.getX() - desplazamientoMapaX,princesa.getY(),
+                    entorno.mouseX(),entorno.mouseY()
+                );
+            }    
+            
+        
         if (disparo != null) {
             disparo.moverse();
             if (disparo.fueraDePantalla(800, 600)) disparo = null;
         }
+        
+        if (disparoArea != null) {
+            disparoArea.moverse();
+            if (disparoArea.fueraDePantalla(800, 600)) disparoArea = null;
+        }
+        
  
         // (SPAWN DE ENEMIGOS) (!!!)
         // El arreglo tiene tamaño fijo (MAX_ENEMIGOS). Un slot null significa  que está libre. Se genera un nuevo enemigo si hay menos de MIN_ENEMIGOS vivos (mantiene mínimo en pantalla), o SI pasaron más de 90 (lo podemnos cambiar si querés) ticks desde el último spawn.
@@ -208,6 +225,17 @@ public class Juego extends InterfaceJuego {
                 disparo = null; // el disparo desaparece
                 continue;
             }
+            
+            // Colisión con el proyectil en area
+            
+            if (disparoArea != null &&
+            	    enemigos[i].colisionaConProyectil(disparoArea.getX(),disparoArea.getY())) {
+
+            	    explotar(disparoArea);
+
+            	    disparoArea = null;
+            	    break;
+            	}
  
             // Colisión con la princesa: se compara con su posición en pantalla.
 
@@ -249,9 +277,12 @@ public class Juego extends InterfaceJuego {
         // DIBUJOS
         princesa.dibujarse(entorno, desplazamientoMapaX);
         if (disparo != null) disparo.dibujarse(entorno);
+        if (disparoArea != null) disparoArea.dibujarse(entorno);
+        
+        //entorno.escribirTexto("Vidas: " + vidas, 20, 30);
  
-        entorno.escribirTexto("Vidas: " + vidas, 20, 30);
- 
+        dibujarVidas();
+        
         // Condicion de derrota: sin vidas
         if (vidas <= 0) {
             estado = PERDIDO;
@@ -286,7 +317,46 @@ public class Juego extends InterfaceJuego {
             }
         }
     }
- 
+    
+    // Disparo secundario; proyectil en area
+    private void explotar(ProyectilArea p) {
+
+        for (int i = 0; i < enemigos.length; i++) {
+
+            if (enemigos[i] == null)
+                continue;
+
+            // distancia entre enemigo y centro de explosión
+            double dx =
+                enemigos[i].getX() - p.getX();
+
+            double dy =
+                enemigos[i].getY() - p.getY();
+
+            double distancia =
+                Math.sqrt(dx*dx + dy*dy);
+
+            // si está dentro del radio muere
+            if (distancia <= p.getRadioExplosion()) {
+                enemigos[i] = null;
+            }
+        }
+    }
+    
+    // Vidas
+        private void dibujarVidas() {
+        	for (int i = 0; i < vidas; i++) {
+        		entorno.dibujarImagen(
+        				imagenVida,
+        				35 + i * 40,
+        				30,
+        				0,
+        				0.02
+        		);
+        	}       	
+        }       
+    
+    
     public static void main(String[] args) {
         new Juego();
     }
