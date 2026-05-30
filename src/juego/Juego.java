@@ -297,8 +297,7 @@ public class Juego extends InterfaceJuego {
                 estado = PERDIDO;
                 return;
             }
-            princesa = new Elizabeth(400, 300);
-            mapa     = new Mapa();
+            princesa = new Elizabeth(desplazamientoMapaX + 400, 300);
         }
  
         // Condicion de victoria: llegar al castillo

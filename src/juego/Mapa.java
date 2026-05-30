@@ -80,22 +80,19 @@ public class Mapa {
         }
     }
  
-    // Calcula desplazamientoMapaX para que la princesa quede centrada en pantalla.
-    // princesaXMundo = posición absoluta de la princesa en el mundo.
-    // El desplazamiento se limita entre 0 y (ANCHO_MUNDO - ANCHO_PANTALLA) para no mostrar el vacío más allá de los bordes del mundo.
+ 
     public void actualizarDesplazamiento(double princesaXMundo) {
-        // La idea es mantener a la princesa siempre en el centro de la pantalla. Si la princesa está en x=1000 del mundo, la cámara tiene que mostrar desde x=600 hasta x=1400 del mundo (con pantalla de 800px).
-        // Eso significa correr la cámara 600px → desplazamiento = 600. Fórmula: desplazamiento = xPrincesa - mitadDePantall
         double mitadPantalla = ANCHO_PANTALLA / 2.0;
-        double nuevoOffset   = princesaXMundo - mitadPantalla;
- 
-        // Límites: el desplazamiento no puede ser negativo (la cámara no puede ir más a la izquierda que el inicio del mundo) ni puede superar ANCHO_MUNDO - ANCHO_PANTALLA (no puede ir más a la derecha que elfinal del mundo, o se vería el vacío de fondo)
+        double nuevoDesplazamiento   = princesaXMundo - mitadPantalla;
 
-        double maxOffset = ANCHO_MUNDO - ANCHO_PANTALLA;
-        if (nuevoOffset < 0)         nuevoOffset = 0;
-        if (nuevoOffset > maxOffset) nuevoOffset = maxOffset;
- 
-        this.desplazamientoMapaX = nuevoOffset;
+        double maxDesplazamiento = ANCHO_MUNDO - ANCHO_PANTALLA;
+        if (nuevoDesplazamiento < 0)         nuevoDesplazamiento = 0;
+        if (nuevoDesplazamiento > maxDesplazamiento) nuevoDesplazamiento = maxDesplazamiento;
+
+        // La cámara solo avanza, nunca retrocede
+        if (nuevoDesplazamiento > this.desplazamientoMapaX) {
+            this.desplazamientoMapaX = nuevoDesplazamiento;
+        }
     }
  
     // Dibuja el fondo, el castillo y todas las islas.
