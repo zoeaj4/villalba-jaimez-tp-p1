@@ -17,6 +17,8 @@ public class Juego extends InterfaceJuego {
     
     private Enemigo[] enemigos;
     private Pocion[]  pociones;
+    
+    private JefeFinal jefe;
  
     // Tamaño máximo de cada arreglo. Si todos los slots están ocupados, no puede aparecer ningún enemigo/pocion más.
     private static final int MAX_ENEMIGOS = 8;
@@ -28,8 +30,9 @@ public class Juego extends InterfaceJuego {
  
     // Estados del Juego
     private static final int JUGANDO = 0;
-    private static final int PERDIDO = 1;
-    private static final int GANADO  = 2;
+    private static final int JEFE_FINAL = 1;
+    private static final int PERDIDO = 2;
+    private static final int GANADO  = 3;
     private int estado = JUGANDO;
  
     private Image imagenPerdiste;
@@ -46,6 +49,7 @@ public class Juego extends InterfaceJuego {
         // Se crean los arreglos con nulls.
         this.enemigos = new Enemigo[MAX_ENEMIGOS];
         this.pociones = new Pocion[MAX_POCIONES];
+        this.jefe = null;
         
         this.imagenPerdiste = Herramientas.cargarImagen("perdiste.png");
         this.imagenGanaste  = Herramientas.cargarImagen("ganaste.png");
@@ -94,7 +98,22 @@ public class Juego extends InterfaceJuego {
             }
             return;
         }
- 
+        
+     // Llegó al castillo, el estado cambia a jefe final, se eliminan enemigos
+        if (estado == JUGANDO && princesa.getX() >= mapa.getXCastillo() - 80) {
+
+        	    estado = JEFE_FINAL;
+        	    jefe = new JefeFinal(400, 100);
+
+        	    // eliminar todos los enemigos
+        	    for (int i = 0; i < enemigos.length; i++) {
+        	        enemigos[i] = null;
+        	    }
+        	}
+        
+        
+        
+        
 
         // JUGANDO (!!!)
         
@@ -182,10 +201,10 @@ public class Juego extends InterfaceJuego {
         // (SPAWN DE ENEMIGOS) (!!!)
         // El arreglo tiene tamaño fijo (MAX_ENEMIGOS). Un slot null significa  que está libre. Se genera un nuevo enemigo si hay menos de MIN_ENEMIGOS vivos (mantiene mínimo en pantalla), o SI pasaron más de 90 (lo podemnos cambiar si querés) ticks desde el último spawn.
         // Solo se crea uno por tick; el break sale del loop al encontrar el primer slot libre.
-        
+        if (estado == JUGANDO) {
         int vivos = 0;
         for (Enemigo e : enemigos) if (e != null) vivos++;
- 
+        
         ticksDesdeUltimoEnemigo++;
         if (vivos < MIN_ENEMIGOS || ticksDesdeUltimoEnemigo > 90) {
             for (int i = 0; i < enemigos.length; i++) {
@@ -198,6 +217,7 @@ public class Juego extends InterfaceJuego {
                 }
             }
         }
+    }
  
         // MOVER Y COLISIONAR ENEMIGOS (!!!)
         // Se recorre el arreglo. Los slots null se saltan. Cuando un enemigo muere o sale de pantalla, su slot pasa a null para que pueda reutilizarse en el siguiente spawn.
@@ -277,10 +297,7 @@ public class Juego extends InterfaceJuego {
         // DIBUJOS
         princesa.dibujarse(entorno, desplazamientoMapaX);
         if (disparo != null) disparo.dibujarse(entorno);
-        if (disparoArea != null) disparoArea.dibujarse(entorno);
-        
-        //entorno.escribirTexto("Vidas: " + vidas, 20, 30);
- 
+        if (disparoArea != null) disparoArea.dibujarse(entorno);    
         dibujarVidas();
         
         // Condicion de derrota: sin vidas
@@ -300,11 +317,68 @@ public class Juego extends InterfaceJuego {
             princesa = new Elizabeth(desplazamientoMapaX + 400, 300);
         }
  
-        // Condicion de victoria: llegar al castillo
-        if (princesa.getX() >= mapa.getXCastillo() - 80) {
-            estado = GANADO;
+        // Condicion de victoria: llegar al castillo (ahora es derrotar al jefe final)
+        if (estado == JEFE_FINAL) {
+
+        	// dibujos
+                       
+            mapa.dibujarse(entorno);           
+            princesa.dibujarse(entorno, mapa.getDesplazamientoMapaX());
+            dibujarVidas();
+            jefe.dibujarse(entorno);
+            
+            	// disparos
+            if (disparo != null) {
+                disparo.dibujarse(entorno);
+            }
+            
+            if (disparoArea != null) {
+                disparoArea.dibujarse(entorno);
+            }
+            
+            
+            // daño al jefe
+            if (disparo != null && jefe != null) {
+                if (jefe.colisionaCon(disparo.getX(), disparo.getY())) {
+                    jefe.recibirDanio();
+                    disparo = null;
+                }
+            }
+            
+            if (disparoArea != null && jefe != null) {
+                if (jefe.colisionaCon(disparoArea.getX(), disparoArea.getY())) {
+                    jefe.recibirDanio();
+                    disparoArea = null;
+                }
+            }
+            // barra de vida
+            if (jefe != null) {
+
+                int vida = jefe.getVidas();
+
+
+                entorno.dibujarRectangulo(		
+                	400,
+                    30,
+                    vida * 15,
+                    15,
+                    0,
+                    Color.RED
+                );
+
+                entorno.escribirTexto("JEFE FINAL", 330, 20);
+            }
+            
+            // victoria
+            if (jefe != null && jefe.getVidas() <= 0) {
+                estado = GANADO;
+            }
+
+            return;
         }
+        
     }
+    
  
     // Pociones, esto lo podes cambiar de lugar para que sea más prolijo si querés, yo lo puse acá porque fue lo último que hice xD
     private void agregarPocion(Pocion p) {
@@ -342,7 +416,7 @@ public class Juego extends InterfaceJuego {
         }
     }
     
-    // Vidas
+    // Vidas de la princesa 
         private void dibujarVidas() {
         	for (int i = 0; i < vidas; i++) {
         		entorno.dibujarImagen(

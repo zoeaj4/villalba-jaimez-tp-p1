@@ -19,8 +19,8 @@ public class Mapa {
     private Isla[] islas;
  
     // Posición y tamaño del castillo (meta del juego), en coordenadas mundo.
-    private static final double X_CASTILLO     = ANCHO_MUNDO - 100;
-    private static final double Y_CASTILLO     = 390;
+    private static final double X_CASTILLO     = ANCHO_MUNDO - 45;
+    private static final double Y_CASTILLO     = 400;
     private static final double ANCHO_CASTILLO = 200;
     private static final double ALTO_CASTILLO  = 250;
  
